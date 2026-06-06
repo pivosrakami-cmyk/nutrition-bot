@@ -5,7 +5,7 @@ from datetime import datetime, time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
-TOKEN = os.getenv("BOT_TOKEN", "8948459546:AAHIrq00aaNR9Tf89S2u_eYs4gHS_2tsOdM")
+TOKEN = os.environ["BOT_TOKEN"]
 DATA_FILE = "data.json"
 
 SCHEDULE = {
