@@ -368,7 +368,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "📊 /report — отчёт дня"
         )
 
-def main():
+if __name__ == "__main__":
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("today", cmd_today))
@@ -380,6 +380,3 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     print("Bot started!")
     app.run_polling()
-
-if __name__ == "__main__":
-    main()
