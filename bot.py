@@ -368,7 +368,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "📊 /report — отчёт дня"
         )
 
-if __name__ == "__main__":
+async def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("today", cmd_today))
@@ -379,4 +379,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     print("Bot started!")
-    app.run_polling()
+    await app.run_polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())
