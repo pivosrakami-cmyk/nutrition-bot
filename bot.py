@@ -5,7 +5,17 @@ from datetime import datetime, time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
-TOKEN = os.environ["BOT_TOKEN"]
+# Load token from .env file or environment
+def load_token():
+    if os.path.exists(".env"):
+        with open(".env") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("BOT_TOKEN="):
+                    return line.split("=", 1)[1]
+    return os.environ.get("BOT_TOKEN", "")
+
+TOKEN = load_token()
 DATA_FILE = "data.json"
 
 SCHEDULE = {
