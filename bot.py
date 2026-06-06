@@ -1,22 +1,31 @@
 import os
 import json
-import asyncio
-from datetime import datetime, time
+import requests
+from datetime import datetime, timedelta, time as dtime
+import pytz
+from icalendar import Calendar
+import recurring_ical_events
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
-# Load token from .env file or environment
-def load_token():
+LISBON = pytz.timezone("Europe/Lisbon")
+DATA_FILE = "data.json"
+
+def load_env():
+    env = {}
     if os.path.exists(".env"):
         with open(".env") as f:
             for line in f:
                 line = line.strip()
-                if line.startswith("BOT_TOKEN="):
-                    return line.split("=", 1)[1]
-    return os.environ.get("BOT_TOKEN", "")
+                if "=" in line and not line.startswith("#"):
+                    k, v = line.split("=", 1)
+                    env[k.strip()] = v.strip()
+    return env
 
-TOKEN = load_token()
-DATA_FILE = "data.json"
+_env = load_env()
+TOKEN = _env.get("BOT_TOKEN") or os.environ.get("BOT_TOKEN", "")
+CHAT_ID = int(_env.get("CHAT_ID") or os.environ.get("CHAT_ID", "0"))
+CALENDAR_URL = _env.get("CALENDAR_ICAL_URL") or os.environ.get("CALENDAR_ICAL_URL", "")
 
 SCHEDULE = {
     0: {"name": "Понедельник", "emoji": "🧘", "pilates": True,  "gym": False, "deep_work": "🤖 ИИ / приложения", "lang": "🇬🇧 Английский"},
@@ -62,11 +71,94 @@ def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-def get_today():
-    return datetime.now()
-
 def get_weekday():
-    return datetime.now().weekday()
+    return datetime.now(LISBON).weekday()
+
+def build_meal_text(d=None):
+    if d is None:
+        d = get_weekday()
+    is_pilates = d in [0, 4]
+
+    if d == 6:
+        return "😴 Воскресенье — ешь что хочешь, отдыхай!\n\n💧 Не забывай про воду — 3л в день!"
+    elif is_pilates:
+        return (
+            "🧘 *День пилатеса* — натощак до занятия!\n\n"
+            "🍳 *12:00 — Завтрак/обед* (~600 ккал)\n"
+            "Белок: лосось 150г / треска 200г / 3 яйца\n"
+            "Углеводы: рис 150г / батат\n"
+            "Овощи + оливковое масло + 1 фрукт\n\n"
+            "🍽️ *15:00 — Обед* (~600 ккал)\n"
+            "Белок: треска / тунец 200г\n"
+            "Углеводы: рис 100г / батат\n"
+            "Овощи + моцарелла\n\n"
+            "🌙 *19:00 — Ужин* (~600 ккал)\n"
+            "Белок: рыба / яйца\n"
+            "Много овощей, минимум углеводов\n\n"
+            "💧 Не забывай про воду — 3л в день!"
+        )
+    else:
+        return (
+            "🌅 *Завтрак* 6:30 (~500 ккал)\n"
+            "Белок: лосось 120г / треска 150г / 3 яйца\n"
+            "Углеводы: рис/батат 150г\n"
+            "Овощи + 1 фрукт\n\n"
+            "🍎 *Перекус* ~11:00 (~200 ккал)\n"
+            "Фрукт + орехи / йогурт\n\n"
+            "🍽️ *Обед* 14:30 (~600 ккал)\n"
+            "Белок: рыба 200г / 3 яйца\n"
+            "Углеводы: меньше! 100г риса / батат\n"
+            "Овощи + оливковое масло + 1 фрукт\n\n"
+            "🌙 *Ужин* 19:00 (~600 ккал)\n"
+            "Белок: рыба / яйца\n"
+            "Много овощей, минимум углеводов\n\n"
+            "💧 Не забывай про воду — 3л в день!"
+        )
+
+# --- Фоновые задачи ---
+
+async def job_calendar_check(context):
+    """Проверяет Google Calendar каждую минуту, уведомляет за 15 минут до события"""
+    if not CALENDAR_URL or not CHAT_ID:
+        return
+    try:
+        now = datetime.now(LISBON)
+        window_start = now + timedelta(minutes=14)
+        window_end = now + timedelta(minutes=16)
+
+        response = requests.get(CALENDAR_URL, timeout=10)
+        cal = Calendar.from_ical(response.content)
+        events = recurring_ical_events.of(cal).between(window_start, window_end)
+
+        for event in events:
+            summary = str(event.get("SUMMARY", "Событие"))
+            dtstart = event.get("DTSTART").dt
+            # Пропускаем события на весь день (date, не datetime)
+            if not hasattr(dtstart, 'hour'):
+                continue
+            if dtstart.tzinfo:
+                dtstart = dtstart.astimezone(LISBON)
+            time_str = dtstart.strftime("%H:%M")
+            await context.bot.send_message(
+                chat_id=CHAT_ID,
+                text=f"⏰ Через 15 минут: *{summary}*\n🕐 {time_str}",
+                parse_mode="Markdown"
+            )
+    except Exception as e:
+        print(f"Ошибка проверки календаря: {e}")
+
+async def job_meal_morning(context):
+    """Утренняя рассылка рациона на день в 6:00"""
+    if not CHAT_ID:
+        return
+    d = get_weekday()
+    day = SCHEDULE[d]
+    now = datetime.now(LISBON)
+    text = f"☀️ *Доброе утро, Den! {day['name']}, {now.strftime('%d.%m')}* {day['emoji']}\n\n"
+    text += build_meal_text(d)
+    await context.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="Markdown")
+
+# --- Команды ---
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -77,13 +169,15 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🛒 /shop — список покупок\n"
         "💧 /water — трекер воды\n"
         "📊 /report — вечерний отчёт\n\n"
-        "Просто напиши мне в любое время!"
+        "Плюс автоматически:\n"
+        "☀️ Рацион на день — каждое утро в 6:00\n"
+        "⏰ Уведомления из Google Calendar — за 15 минут"
     )
 
 async def cmd_today(update: Update, context: ContextTypes.DEFAULT_TYPE):
     d = get_weekday()
     day = SCHEDULE[d]
-    now = get_today()
+    now = datetime.now(LISBON)
     text = f"📅 *{day['name']}, {now.strftime('%d.%m')}* {day['emoji']}\n\n"
 
     if d == 6:
@@ -114,46 +208,7 @@ async def cmd_today(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode="Markdown")
 
 async def cmd_meal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    d = get_weekday()
-    is_pilates = d in [0, 4]
-
-    if d == 6:
-        text = "😴 Воскресенье — ешь что хочешь, отдыхай!"
-    elif is_pilates:
-        text = (
-            "🧘 *День пилатеса* — натощак до занятия!\n\n"
-            "🍳 *12:00 — Завтрак/обед* (~600 ккал)\n"
-            "Белок: лосось 150г / треска 200г / 3 яйца\n"
-            "Углеводы: рис 150г / батат\n"
-            "Овощи: салат + оливковое масло\n"
-            "+ 1 фрукт\n\n"
-            "🍽️ *15:00 — Обед* (~600 ккал)\n"
-            "Белок: треска / тунец 200г\n"
-            "Углеводы: рис 100г / батат\n"
-            "Овощи + моцарелла\n\n"
-            "🌙 *19:00 — Ужин* (~600 ккал)\n"
-            "Белок: рыба / яйца\n"
-            "Много овощей, минимум углеводов"
-        )
-    else:
-        text = (
-            "🌅 *Завтрак* 6:30 (~500 ккал)\n"
-            "Белок: лосось 120г / треска 150г / 3 яйца\n"
-            "Углеводы: рис/батат 150г\n"
-            "Овощи + 1 фрукт\n\n"
-            "🍎 *Перекус* ~11:00 (~200 ккал)\n"
-            "Фрукт + орехи / йогурт\n\n"
-            "🍽️ *Обед* 14:30 (~600 ккал)\n"
-            "Белок: рыба 200г / 3 яйца\n"
-            "Углеводы: меньше! 100г риса / батат\n"
-            "Овощи + оливковое масло + 1 фрукт\n\n"
-            "🌙 *Ужин* 19:00 (~600 ккал)\n"
-            "Белок: рыба / яйца\n"
-            "Много овощей, минимум углеводов"
-        )
-
-    text += "\n\n💧 Не забывай про воду — 3л в день!"
-    await update.message.reply_text(text, parse_mode="Markdown")
+    await update.message.reply_text(build_meal_text(), parse_mode="Markdown")
 
 async def cmd_shop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = load_data()
@@ -163,10 +218,9 @@ async def cmd_shop(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not needed:
         keyboard = [[InlineKeyboardButton("📋 Полный список", callback_data="shop_full")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(
             "✅ Список покупок пуст!\nВсё куплено или ничего не отмечено.",
-            reply_markup=reply_markup
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
         return
 
@@ -180,12 +234,11 @@ async def cmd_shop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard.append([InlineKeyboardButton("📋 Полный список", callback_data="shop_full")])
     keyboard.append([InlineKeyboardButton("🔄 Отметить всё нужным", callback_data="shop_all")])
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def cmd_water(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = load_data()
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(LISBON).strftime("%Y-%m-%d")
     if data.get("water_date") != today:
         data["water"] = 0
         data["water_date"] = today
@@ -193,8 +246,7 @@ async def cmd_water(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     glasses = data.get("water", 0)
     liters = glasses * 0.25
-    goal = 12  # 3 litres / 0.25
-
+    goal = 12
     bar = "💧" * glasses + "⬜" * (goal - glasses)
     pct = int(liters / 3.0 * 100)
 
@@ -203,46 +255,43 @@ async def cmd_water(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("- 250мл", callback_data="water_remove")],
         [InlineKeyboardButton("Сбросить", callback_data="water_reset")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    text = (
-        f"💧 *Вода сегодня*\n\n"
-        f"{bar}\n\n"
-        f"Выпито: *{liters:.2f}л* из 3л ({pct}%)\n"
-        f"Стаканов: {glasses} из {goal}"
+    await update.message.reply_text(
+        f"💧 *Вода сегодня*\n\n{bar}\n\nВыпито: *{liters:.2f}л* из 3л ({pct}%)\nСтаканов: {glasses} из {goal}",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
 
 async def cmd_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = load_data()
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(LISBON).strftime("%Y-%m-%d")
     glasses = data.get("water", 0) if data.get("water_date") == today else 0
     liters = glasses * 0.25
-    d = get_weekday()
-    day = SCHEDULE[d]
-
     water_ok = "✅" if liters >= 3 else "⚠️"
 
-    text = (
-        f"📊 *Отчёт за {datetime.now().strftime('%d.%m')}*\n\n"
+    await update.message.reply_text(
+        f"📊 *Отчёт за {datetime.now(LISBON).strftime('%d.%m')}*\n\n"
         f"{water_ok} Вода: {liters:.2f}л / 3л\n\n"
-        f"Как прошёл день?\n"
-        f"Напиши мне пару строк — это помогает не терять неделю незаметно 💪"
+        f"Как прошёл день?\nНапиши мне пару строк 💪",
+        parse_mode="Markdown"
     )
-    await update.message.reply_text(text, parse_mode="Markdown")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     data = load_data()
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(LISBON).strftime("%Y-%m-%d")
     cb = query.data
 
-    if cb == "water_add":
+    if cb in ("water_add", "water_remove", "water_reset"):
         if data.get("water_date") != today:
             data["water"] = 0
             data["water_date"] = today
-        data["water"] = min(data.get("water", 0) + 1, 20)
+        if cb == "water_add":
+            data["water"] = min(data.get("water", 0) + 1, 20)
+        elif cb == "water_remove":
+            data["water"] = max(data.get("water", 0) - 1, 0)
+        else:
+            data["water"] = 0
         save_data(data)
         glasses = data["water"]
         liters = glasses * 0.25
@@ -256,43 +305,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         await query.edit_message_text(
             f"💧 *Вода сегодня*\n\n{bar}\n\nВыпито: *{liters:.2f}л* из 3л ({pct}%)\nСтаканов: {glasses} из {goal}",
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
-    elif cb == "water_remove":
-        if data.get("water_date") != today:
-            data["water"] = 0
-            data["water_date"] = today
-        data["water"] = max(data.get("water", 0) - 1, 0)
-        save_data(data)
-        glasses = data["water"]
-        liters = glasses * 0.25
-        goal = 12
-        bar = "💧" * glasses + "⬜" * max(0, goal - glasses)
-        pct = int(liters / 3.0 * 100)
-        keyboard = [
-            [InlineKeyboardButton("+ 250мл", callback_data="water_add"),
-             InlineKeyboardButton("- 250мл", callback_data="water_remove")],
-            [InlineKeyboardButton("Сбросить", callback_data="water_reset")]
-        ]
-        await query.edit_message_text(
-            f"💧 *Вода сегодня*\n\n{bar}\n\nВыпито: *{liters:.2f}л* из 3л ({pct}%)\nСтаканов: {glasses} из {goal}",
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
-    elif cb == "water_reset":
-        data["water"] = 0
-        data["water_date"] = today
-        save_data(data)
-        keyboard = [
-            [InlineKeyboardButton("+ 250мл", callback_data="water_add"),
-             InlineKeyboardButton("- 250мл", callback_data="water_remove")],
-            [InlineKeyboardButton("Сбросить", callback_data="water_reset")]
-        ]
-        await query.edit_message_text(
-            "💧 *Вода сегодня*\n\n⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜\n\nВыпито: *0.00л* из 3л (0%)\nСтаканов: 0 из 12",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
@@ -302,10 +314,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data["shop"][item_id] = "done"
         save_data(data)
         needed = [i for i in SHOP_ITEMS if data["shop"].get(i["id"]) == "needed"]
-        total = sum(i["price"] for i in needed)
         if not needed:
             await query.edit_message_text("✅ Всё куплено! Молодец 🎉")
         else:
+            total = sum(i["price"] for i in needed)
             text = f"🛒 *Нужно купить* ({len(needed)} позиций):\n\n"
             keyboard = []
             for item in needed:
@@ -349,9 +361,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.lower()
     if any(w in text for w in ["купить", "купи", "нужно"]):
-        await update.message.reply_text(
-            "🛒 Чтобы добавить в список — используй /shop\nТам можно отметить что нужно купить."
-        )
+        await update.message.reply_text("🛒 Чтобы добавить в список — используй /shop")
     elif any(w in text for w in ["вода", "воды", "выпил"]):
         await cmd_water(update, context)
     elif any(w in text for w in ["сегодня", "расписание", "план"]):
@@ -370,6 +380,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = Application.builder().token(TOKEN).build()
+
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("today", cmd_today))
     app.add_handler(CommandHandler("meal", cmd_meal))
@@ -378,7 +389,17 @@ def main():
     app.add_handler(CommandHandler("report", cmd_report))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
-    print("Bot started!")
+
+    # Проверка Google Calendar каждую минуту
+    app.job_queue.run_repeating(job_calendar_check, interval=60, first=10)
+
+    # Утренний рацион в 6:00 по Лиссабону
+    app.job_queue.run_daily(
+        job_meal_morning,
+        time=dtime(hour=6, minute=0, tzinfo=LISBON)
+    )
+
+    print("Бот запущен!")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
