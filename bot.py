@@ -28,37 +28,37 @@ CHAT_ID = int(_env.get("CHAT_ID") or os.environ.get("CHAT_ID", "0"))
 CALENDAR_URL = _env.get("CALENDAR_ICAL_URL") or os.environ.get("CALENDAR_ICAL_URL", "")
 
 SCHEDULE = {
-    0: {"name": "Понедельник", "emoji": "🧘", "pilates": True,  "gym": False, "deep_work": "🤖 ИИ / приложения", "lang": "🇬🇧 Английский"},
-    1: {"name": "Вторник",    "emoji": "🏋️", "pilates": False, "gym": True,  "deep_work": "🎬 Видеомейкерство", "lang": "🇵🇹 Португальский"},
-    2: {"name": "Среда",      "emoji": "🏋️", "pilates": False, "gym": True,  "deep_work": "🤖 ИИ / приложения", "lang": "🇬🇧 Английский"},
-    3: {"name": "Четверг",    "emoji": "🏋️", "pilates": False, "gym": True,  "deep_work": "🎬 Видеомейкерство", "lang": "🇵🇹 Португальский"},
-    4: {"name": "Пятница",    "emoji": "🧘", "pilates": True,  "gym": False, "deep_work": "🤖 ИИ / приложения", "lang": "🇵🇹 Португальский"},
-    5: {"name": "Суббота",    "emoji": "🌿", "pilates": False, "gym": False, "deep_work": "🎬 Видеомейкерство", "lang": "🌍 Язык на выбор"},
-    6: {"name": "Воскресенье","emoji": "😴", "pilates": False, "gym": False, "deep_work": None, "lang": None},
+    0: {"name": "Понедельник", "emoji": "🧘", "pilates": True,  "gym": False},
+    1: {"name": "Вторник",    "emoji": "🏋️", "pilates": False, "gym": True},
+    2: {"name": "Среда",      "emoji": "🏋️", "pilates": False, "gym": True},
+    3: {"name": "Четверг",    "emoji": "🏋️", "pilates": False, "gym": True},
+    4: {"name": "Пятница",    "emoji": "🧘", "pilates": True,  "gym": False},
+    5: {"name": "Суббота",    "emoji": "🌿", "pilates": False, "gym": False},
+    6: {"name": "Воскресенье","emoji": "😴", "pilates": False, "gym": False},
 }
 
 SHOP_ITEMS = [
-    {"id": "bacalhau",  "name": "Треска / Pescada",        "qty": "800г",  "price": 6.80},
-    {"id": "salmao",    "name": "Лосось / Salmão",         "qty": "400г",  "price": 5.20},
+    {"id": "bacalhau",  "name": "Треска / Pescada",        "qty": "800г",    "price": 6.80},
+    {"id": "salmao",    "name": "Лосось / Salmão",         "qty": "400г",    "price": 5.20},
     {"id": "atum",      "name": "Тунец в воде / Atum",     "qty": "6 банок", "price": 5.10},
-    {"id": "ovos",      "name": "Яйца / Ovos",             "qty": "18 шт", "price": 4.03},
-    {"id": "sardinhas", "name": "Сардины / Sardinhas",     "qty": "300г",  "price": 1.50},
-    {"id": "arroz",     "name": "Рис интегральный",        "qty": "1 кг",  "price": 1.39},
-    {"id": "batata",    "name": "Батат / Batata-doce",     "qty": "1 кг",  "price": 1.60},
-    {"id": "massa",     "name": "Паста интегральная",      "qty": "500г",  "price": 0.99},
-    {"id": "tomates",   "name": "Помидоры / Tomates",      "qty": "1 кг",  "price": 2.19},
-    {"id": "pepinos",   "name": "Огурцы / Pepinos",        "qty": "4 шт",  "price": 1.20},
-    {"id": "alface",    "name": "Салат / Alface",          "qty": "2 упак","price": 2.76},
-    {"id": "brocoulos", "name": "Брокколи / Brócolos",    "qty": "1 кг",  "price": 1.49},
-    {"id": "cenouras",  "name": "Морковь / Cenouras",      "qty": "1 кг",  "price": 1.09},
-    {"id": "bananas",   "name": "Бананы / Bananas",        "qty": "1 кг",  "price": 1.28},
-    {"id": "peras",     "name": "Груши / Peras",           "qty": "1 кг",  "price": 1.89},
-    {"id": "laranjas",  "name": "Апельсины / Laranjas",   "qty": "1 кг",  "price": 1.61},
-    {"id": "nozes",     "name": "Орехи / Frutos secos",   "qty": "200г",  "price": 2.49},
-    {"id": "iogurte",   "name": "Йогурт греческий",       "qty": "1 кг",  "price": 2.25},
-    {"id": "azeite",    "name": "Оливковое масло",         "qty": "500мл", "price": 3.99},
-    {"id": "mozza",     "name": "Моцарелла / Mozzarella", "qty": "125г",  "price": 0.99},
-    {"id": "agua",      "name": "Вода / Água",             "qty": "6×1,5л","price": 2.00},
+    {"id": "ovos",      "name": "Яйца / Ovos",             "qty": "18 шт",   "price": 4.03},
+    {"id": "sardinhas", "name": "Сардины / Sardinhas",     "qty": "300г",    "price": 1.50},
+    {"id": "arroz",     "name": "Рис интегральный",        "qty": "1 кг",    "price": 1.39},
+    {"id": "batata",    "name": "Батат / Batata-doce",     "qty": "1 кг",    "price": 1.60},
+    {"id": "massa",     "name": "Паста интегральная",      "qty": "500г",    "price": 0.99},
+    {"id": "tomates",   "name": "Помидоры / Tomates",      "qty": "1 кг",    "price": 2.19},
+    {"id": "pepinos",   "name": "Огурцы / Pepinos",        "qty": "4 шт",    "price": 1.20},
+    {"id": "alface",    "name": "Салат / Alface",          "qty": "2 упак",  "price": 2.76},
+    {"id": "brocoulos", "name": "Брокколи / Brócolos",    "qty": "1 кг",    "price": 1.49},
+    {"id": "cenouras",  "name": "Морковь / Cenouras",      "qty": "1 кг",    "price": 1.09},
+    {"id": "bananas",   "name": "Бананы / Bananas",        "qty": "1 кг",    "price": 1.28},
+    {"id": "peras",     "name": "Груши / Peras",           "qty": "1 кг",    "price": 1.89},
+    {"id": "laranjas",  "name": "Апельсины / Laranjas",   "qty": "1 кг",    "price": 1.61},
+    {"id": "nozes",     "name": "Орехи / Frutos secos",   "qty": "200г",    "price": 2.49},
+    {"id": "iogurte",   "name": "Йогурт греческий",       "qty": "1 кг",    "price": 2.25},
+    {"id": "azeite",    "name": "Оливковое масло",         "qty": "500мл",   "price": 3.99},
+    {"id": "mozza",     "name": "Моцарелла / Mozzarella", "qty": "125г",    "price": 0.99},
+    {"id": "agua",      "name": "Вода / Água",             "qty": "6×1,5л",  "price": 2.00},
 ]
 
 def load_data():
@@ -74,7 +74,63 @@ def save_data(data):
 def get_weekday():
     return datetime.now(LISBON).weekday()
 
-def build_meal_text(d=None):
+def build_meal_text(meal_type, d=None):
+    if d is None:
+        d = get_weekday()
+    is_pilates = d in [0, 4]
+
+    if meal_type == "breakfast":
+        if is_pilates:
+            return (
+                "🍳 *Завтрак / Обед через 15 минут* (12:00)\n\n"
+                "Первый приём после пилатеса!\n\n"
+                "Белок: лосось 150г / треска 200г / 3 яйца\n"
+                "Углеводы: рис 150г / батат\n"
+                "Овощи + оливковое масло + 1 фрукт\n"
+                "~600 ккал"
+            )
+        else:
+            return (
+                "🌅 *Завтрак через 15 минут* (6:30)\n\n"
+                "Белок: лосось 120г / треска 150г / 3 яйца\n"
+                "Углеводы: рис/батат 150г\n"
+                "Овощи + 1 фрукт\n"
+                "~500 ккал"
+            )
+    elif meal_type == "snack":
+        return (
+            "🍎 *Перекус через 15 минут* (~11:00)\n\n"
+            "1 фрукт + горсть орехов\n"
+            "или 1 фрукт + греческий йогурт\n"
+            "~200 ккал"
+        )
+    elif meal_type == "lunch":
+        if is_pilates:
+            return (
+                "🍽️ *Обед через 15 минут* (15:00)\n\n"
+                "Белок: треска / тунец 200г\n"
+                "Углеводы: рис 100г / батат\n"
+                "Овощи + моцарелла\n"
+                "~600 ккал"
+            )
+        else:
+            return (
+                "🍽️ *Обед через 15 минут* (14:30)\n\n"
+                "Белок: рыба 200г / 3 яйца\n"
+                "Углеводы: 100г риса / батат\n"
+                "Овощи + оливковое масло + 1 фрукт\n"
+                "~600 ккал"
+            )
+    elif meal_type == "dinner":
+        return (
+            "🌙 *Ужин через 15 минут* (19:00)\n\n"
+            "Белок: рыба / яйца\n"
+            "Много овощей, минимум углеводов\n"
+            "~600 ккал"
+        )
+    return ""
+
+def build_full_meal_text(d=None):
     if d is None:
         d = get_weekday()
     is_pilates = d in [0, 4]
@@ -101,17 +157,14 @@ def build_meal_text(d=None):
         return (
             "🌅 *Завтрак* 6:30 (~500 ккал)\n"
             "Белок: лосось 120г / треска 150г / 3 яйца\n"
-            "Углеводы: рис/батат 150г\n"
-            "Овощи + 1 фрукт\n\n"
+            "Углеводы: рис/батат 150г + овощи + 1 фрукт\n\n"
             "🍎 *Перекус* ~11:00 (~200 ккал)\n"
             "Фрукт + орехи / йогурт\n\n"
             "🍽️ *Обед* 14:30 (~600 ккал)\n"
             "Белок: рыба 200г / 3 яйца\n"
-            "Углеводы: меньше! 100г риса / батат\n"
-            "Овощи + оливковое масло + 1 фрукт\n\n"
+            "Углеводы: 100г риса / батат + овощи + 1 фрукт\n\n"
             "🌙 *Ужин* 19:00 (~600 ккал)\n"
-            "Белок: рыба / яйца\n"
-            "Много овощей, минимум углеводов\n\n"
+            "Белок: рыба / яйца + много овощей\n\n"
             "💧 Не забывай про воду — 3л в день!"
         )
 
@@ -133,7 +186,6 @@ async def job_calendar_check(context):
         for event in events:
             summary = str(event.get("SUMMARY", "Событие"))
             dtstart = event.get("DTSTART").dt
-            # Пропускаем события на весь день (date, не datetime)
             if not hasattr(dtstart, 'hour'):
                 continue
             if dtstart.tzinfo:
@@ -147,16 +199,87 @@ async def job_calendar_check(context):
     except Exception as e:
         print(f"Ошибка проверки календаря: {e}")
 
-async def job_meal_morning(context):
-    """Утренняя рассылка рациона на день в 6:00"""
+async def job_water_reminder(context):
+    """Напоминание выпить 250мл воды"""
     if not CHAT_ID:
         return
     d = get_weekday()
-    day = SCHEDULE[d]
-    now = datetime.now(LISBON)
-    text = f"☀️ *Доброе утро, Den! {day['name']}, {now.strftime('%d.%m')}* {day['emoji']}\n\n"
-    text += build_meal_text(d)
-    await context.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="Markdown")
+    if d == 6:
+        return
+    data = load_data()
+    today = datetime.now(LISBON).strftime("%Y-%m-%d")
+    glasses = data.get("water", 0) if data.get("water_date") == today else 0
+    liters = glasses * 0.25
+    keyboard = [[InlineKeyboardButton("✅ Выпил 250мл", callback_data="water_add")]]
+    await context.bot.send_message(
+        chat_id=CHAT_ID,
+        text=f"💧 Выпей 250мл воды!\n\nСегодня уже: {liters:.2f}л из 3л",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+async def job_meal_breakfast(context):
+    """Напоминание о завтраке"""
+    if not CHAT_ID:
+        return
+    d = get_weekday()
+    if d in [5, 6]:
+        return
+    if not SCHEDULE[d]["pilates"]:
+        await context.bot.send_message(
+            chat_id=CHAT_ID,
+            text=build_meal_text("breakfast"),
+            parse_mode="Markdown"
+        )
+
+async def job_meal_snack(context):
+    """Напоминание о перекусе (только дни с залом)"""
+    if not CHAT_ID:
+        return
+    d = get_weekday()
+    if SCHEDULE[d]["gym"]:
+        await context.bot.send_message(
+            chat_id=CHAT_ID,
+            text=build_meal_text("snack"),
+            parse_mode="Markdown"
+        )
+
+async def job_meal_pilates_breakfast(context):
+    """Напоминание о завтраке в дни пилатеса (11:45)"""
+    if not CHAT_ID:
+        return
+    d = get_weekday()
+    if SCHEDULE[d]["pilates"]:
+        await context.bot.send_message(
+            chat_id=CHAT_ID,
+            text=build_meal_text("breakfast"),
+            parse_mode="Markdown"
+        )
+
+async def job_meal_lunch(context):
+    """Напоминание об обеде"""
+    if not CHAT_ID:
+        return
+    d = get_weekday()
+    if d in [5, 6]:
+        return
+    await context.bot.send_message(
+        chat_id=CHAT_ID,
+        text=build_meal_text("lunch"),
+        parse_mode="Markdown"
+    )
+
+async def job_meal_dinner(context):
+    """Напоминание об ужине"""
+    if not CHAT_ID:
+        return
+    d = get_weekday()
+    if d == 6:
+        return
+    await context.bot.send_message(
+        chat_id=CHAT_ID,
+        text=build_meal_text("dinner"),
+        parse_mode="Markdown"
+    )
 
 # --- Команды ---
 
@@ -169,9 +292,10 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🛒 /shop — список покупок\n"
         "💧 /water — трекер воды\n"
         "📊 /report — вечерний отчёт\n\n"
-        "Плюс автоматически:\n"
-        "☀️ Рацион на день — каждое утро в 6:00\n"
-        "⏰ Уведомления из Google Calendar — за 15 минут"
+        "Автоматически:\n"
+        "💧 Напоминания выпить воду — каждые 1-1.5ч\n"
+        "🍽️ Напоминания о еде — за 15 мин до приёма\n"
+        "⏰ Уведомления из Google Calendar — за 15 мин"
     )
 
 async def cmd_today(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -182,33 +306,31 @@ async def cmd_today(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if d == 6:
         text += "😴 Воскресенье — полный отдых!\nБез задач, без расписания. Заслужил."
-    else:
-        if day["pilates"]:
-            text += "🌅 *6:30* — Подъём, 1,5л воды\n"
-            text += f"🧠 *6:30–8:15* — {day['deep_work']}\n"
-            text += f"🌍 *8:15–9:00* — {day['lang']}\n"
-            text += "🧘 *9:00–12:00* — Пилатес + дорога\n"
-            text += "🍳 *12:00–12:45* — Завтрак / обед\n"
-            text += "⚙️ *12:45–18:00* — Фриланс\n"
-        else:
-            text += "🌅 *6:30* — Подъём, 1,5л воды\n"
-            text += "🍳 *6:30–7:00* — Быстрый завтрак\n"
-            text += f"🧠 *7:00–9:00* — {day['deep_work']}\n"
-            text += f"🌍 *9:00–9:45* — {day['lang']}\n"
-            text += "⚙️ *9:45–13:00* — Фриланс\n"
-            text += "🏋️ *13:00–14:30* — Зал\n"
-            text += "🍽️ *14:30–15:15* — Обед\n"
-            text += "⚙️ *15:15–18:00* — Фриланс\n"
-        if d == 5:
-            text += "🎬 *8:00–10:00* — Видеомейкерство\n"
-            text += "🌿 Остаток дня — свободно\n"
+    elif day["pilates"]:
+        text += "🌅 *6:30* — Подъём, выпей воду\n"
+        text += "🧘 *9:00–12:00* — Пилатес + дорога\n"
+        text += "🍳 *12:00–12:45* — Завтрак / обед\n"
+        text += "⚙️ *12:45–18:00* — Фриланс\n"
+        text += "🌙 *19:00* — Ужин\n"
         text += "📚 *21:00–22:00* — Чтение\n"
-        text += "\n💧 Цель: минимум 3л воды сегодня"
+    elif d == 5:
+        text += "🌅 Суббота — свободный день\n"
+        text += "📚 *21:00–22:00* — Чтение\n"
+    else:
+        text += "🌅 *6:30* — Подъём, выпей воду\n"
+        text += "🍳 *6:30–7:00* — Завтрак\n"
+        text += "⚙️ *7:00–13:00* — Работа\n"
+        text += "🏋️ *13:00–14:30* — Зал\n"
+        text += "🍽️ *14:30–15:15* — Обед\n"
+        text += "⚙️ *15:15–18:00* — Работа\n"
+        text += "🌙 *19:00* — Ужин\n"
+        text += "📚 *21:00–22:00* — Чтение\n"
 
+    text += "\n💧 Цель: 3л воды сегодня"
     await update.message.reply_text(text, parse_mode="Markdown")
 
 async def cmd_meal(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(build_meal_text(), parse_mode="Markdown")
+    await update.message.reply_text(build_full_meal_text(), parse_mode="Markdown")
 
 async def cmd_shop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = load_data()
@@ -233,7 +355,6 @@ async def cmd_shop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text += f"\n💰 *Итого: {total:.2f}€*"
     keyboard.append([InlineKeyboardButton("📋 Полный список", callback_data="shop_full")])
     keyboard.append([InlineKeyboardButton("🔄 Отметить всё нужным", callback_data="shop_all")])
-
     await update.message.reply_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def cmd_water(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -390,14 +511,30 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
-    # Проверка Google Calendar каждую минуту
-    app.job_queue.run_repeating(job_calendar_check, interval=60, first=10)
+    jq = app.job_queue
 
-    # Утренний рацион в 6:00 по Лиссабону
-    app.job_queue.run_daily(
-        job_meal_morning,
-        time=dtime(hour=6, minute=0, tzinfo=LISBON)
-    )
+    # Проверка Google Calendar каждую минуту
+    jq.run_repeating(job_calendar_check, interval=60, first=10)
+
+    # Напоминания о воде — 12 раз в день по 250мл = 3л (пн-сб)
+    water_times = [
+        (6, 30), (7, 30), (8, 30), (9, 30), (10, 30), (11, 30),
+        (13, 0), (14, 30), (16, 0), (17, 30), (19, 0), (20, 30),
+    ]
+    for h, m in water_times:
+        jq.run_daily(job_water_reminder, time=dtime(hour=h, minute=m, tzinfo=LISBON))
+
+    # Напоминания о еде (за 15 мин до приёма)
+    # Завтрак в 6:15 — только дни с залом (вт,ср,чт)
+    jq.run_daily(job_meal_breakfast, time=dtime(hour=6, minute=15, tzinfo=LISBON))
+    # Перекус в 10:45 — только дни с залом
+    jq.run_daily(job_meal_snack, time=dtime(hour=10, minute=45, tzinfo=LISBON))
+    # Завтрак в 11:45 — только дни пилатеса (пн,пт)
+    jq.run_daily(job_meal_pilates_breakfast, time=dtime(hour=11, minute=45, tzinfo=LISBON))
+    # Обед в 14:15 (зал) / 14:45 (пилатес)
+    jq.run_daily(job_meal_lunch, time=dtime(hour=14, minute=15, tzinfo=LISBON))
+    # Ужин в 18:45 — все дни кроме вс
+    jq.run_daily(job_meal_dinner, time=dtime(hour=18, minute=45, tzinfo=LISBON))
 
     print("Бот запущен!")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
