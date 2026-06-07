@@ -535,23 +535,60 @@ async def cmd_luna(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_patterns(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(build_patterns_text(), parse_mode="Markdown", reply_markup=main_keyboard())
 
-async def cmd_shop(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    data = load_data()
+def shop_main_keyboard():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🛒 Мой список", callback_data="shop_mylist"),
+         InlineKeyboardButton("📋 Полный список", callback_data="shop_full")],
+        [InlineKeyboardButton("🗑 Сбросить всё", callback_data="shop_reset"),
+         InlineKeyboardButton("◀️ Меню", callback_data="cmd_menu")],
+    ])
+
+def build_shop_mylist(data):
     shop = data.get("shop", {})
     needed = [i for i in SHOP_ITEMS if shop.get(i["id"]) == "needed"]
     if not needed:
-        await update.message.reply_text("✅ Список покупок пуст!",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📋 Полный список", callback_data="shop_full")]]))
-        return
+        return "✅ Список пуст — отметь нужное в полном списке", InlineKeyboardMarkup([
+            [InlineKeyboardButton("📋 Полный список", callback_data="shop_full")],
+            [InlineKeyboardButton("◀️ Меню", callback_data="cmd_menu")],
+        ])
     total = sum(i["price"] for i in needed)
-    text = f"🛒 *Нужно купить* ({len(needed)} позиций):\n\n"
+    text = f"🛒 *Мой список* ({len(needed)} позиций):\n\n"
     rows = []
     for item in needed:
-        text += f"• {item['name']} — {item['qty']} ({item['price']:.2f}€)\n"
-        rows.append([InlineKeyboardButton(f"✅ {item['name']}", callback_data=f"bought_{item['id']}")])
+        text += f"🟡 {item['name']} — {item['qty']} ({item['price']:.2f}€)\n"
+        rows.append([InlineKeyboardButton(f"✅ Купил: {item['name']}", callback_data=f"bought_{item['id']}")])
     text += f"\n💰 *Итого: {total:.2f}€*"
-    rows.append([InlineKeyboardButton("📋 Полный список", callback_data="shop_full")])
-    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(rows))
+    rows.append([InlineKeyboardButton("📋 Полный список", callback_data="shop_full"),
+                 InlineKeyboardButton("◀️ Меню", callback_data="cmd_menu")])
+    return text, InlineKeyboardMarkup(rows)
+
+def build_shop_full(data):
+    shop = data.get("shop", {})
+    text = "📋 *Полный список* (нажми чтобы отметить):\n\n"
+    rows = []
+    for item in SHOP_ITEMS:
+        status = shop.get(item["id"], "none")
+        icon = "✅" if status == "done" else "🟡" if status == "needed" else "⬜"
+        text += f"{icon} {item['name']} — {item['qty']} ({item['price']:.2f}€)\n"
+        label = f"{icon} {item['name']}"
+        rows.append([InlineKeyboardButton(label, callback_data=f"shop_toggle_{item['id']}")])
+    rows.append([InlineKeyboardButton("🛒 Мой список", callback_data="shop_mylist"),
+                 InlineKeyboardButton("◀️ Меню", callback_data="cmd_menu")])
+    return text, InlineKeyboardMarkup(rows)
+
+async def cmd_shop(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    data = load_data()
+    shop = data.get("shop", {})
+    needed_count = sum(1 for i in SHOP_ITEMS if shop.get(i["id"]) == "needed")
+    done_count = sum(1 for i in SHOP_ITEMS if shop.get(i["id"]) == "done")
+    text = (
+        f"🛒 *Список покупок*\n\n"
+        f"🟡 Нужно купить: {needed_count}\n"
+        f"✅ Куплено: {done_count}\n\n"
+        f"В *полном списке* нажимай на товары чтобы отметить нужное 🟡\n"
+        f"В *моём списке* нажимай ✅ когда купил"
+    )
+    await update.message.reply_text(text, parse_mode="Markdown", reply_markup=shop_main_keyboard())
 
 async def cmd_water(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = load_data()
@@ -679,19 +716,36 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif cb == "cmd_shop":
         shop = data.get("shop", {})
-        needed = [i for i in SHOP_ITEMS if shop.get(i["id"]) == "needed"]
-        if not needed:
-            await query.edit_message_text("✅ Список покупок пуст!",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📋 Полный список", callback_data="shop_full")]]))
-        else:
-            total = sum(i["price"] for i in needed)
-            text = f"🛒 *Нужно купить* ({len(needed)} позиций):\n\n"
-            rows = []
-            for item in needed:
-                text += f"• {item['name']} — {item['qty']} ({item['price']:.2f}€)\n"
-                rows.append([InlineKeyboardButton(f"✅ {item['name']}", callback_data=f"bought_{item['id']}")])
-            text += f"\n💰 *Итого: {total:.2f}€*"
-            await query.edit_message_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(rows))
+        needed_count = sum(1 for i in SHOP_ITEMS if shop.get(i["id"]) == "needed")
+        done_count = sum(1 for i in SHOP_ITEMS if shop.get(i["id"]) == "done")
+        text = (
+            f"🛒 *Список покупок*\n\n"
+            f"🟡 Нужно купить: {needed_count}\n"
+            f"✅ Куплено: {done_count}\n\n"
+            f"В *полном списке* нажимай на товары чтобы отметить нужное 🟡\n"
+            f"В *моём списке* нажимай ✅ когда купил"
+        )
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=shop_main_keyboard())
+
+    elif cb == "shop_mylist":
+        text, keyboard = build_shop_mylist(data)
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=keyboard)
+
+    elif cb == "shop_full":
+        text, keyboard = build_shop_full(data)
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=keyboard)
+
+    elif cb.startswith("shop_toggle_"):
+        item_id = cb.replace("shop_toggle_", "")
+        current = data.get("shop", {}).get(item_id, "none")
+        # Цикл: none → needed → done → none
+        next_status = {"none": "needed", "needed": "done", "done": "none"}
+        if "shop" not in data:
+            data["shop"] = {}
+        data["shop"][item_id] = next_status.get(current, "needed")
+        save_data(data)
+        text, keyboard = build_shop_full(data)
+        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=keyboard)
 
     elif cb in ("water_add", "water_remove", "water_reset"):
         if data.get("water_date") != today:
@@ -709,50 +763,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif cb.startswith("bought_"):
         item_id = cb.replace("bought_", "")
+        if "shop" not in data:
+            data["shop"] = {}
         data["shop"][item_id] = "done"
         save_data(data)
-        needed = [i for i in SHOP_ITEMS if data["shop"].get(i["id"]) == "needed"]
-        if not needed:
-            await query.edit_message_text("✅ Всё куплено! Молодец 🎉", reply_markup=main_keyboard())
+        text, keyboard = build_shop_mylist(data)
+        if not any(i for i in SHOP_ITEMS if data["shop"].get(i["id"]) == "needed"):
+            await query.edit_message_text("✅ Всё куплено! Молодец 🎉", reply_markup=shop_main_keyboard())
         else:
-            total = sum(i["price"] for i in needed)
-            text = f"🛒 *Нужно купить* ({len(needed)} позиций):\n\n"
-            rows = []
-            for item in needed:
-                text += f"• {item['name']} — {item['qty']} ({item['price']:.2f}€)\n"
-                rows.append([InlineKeyboardButton(f"✅ {item['name']}", callback_data=f"bought_{item['id']}")])
-            text += f"\n💰 *Итого: {total:.2f}€*"
-            await query.edit_message_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(rows))
-
-    elif cb == "shop_all":
-        for item in SHOP_ITEMS:
-            data["shop"][item["id"]] = "needed"
-        save_data(data)
-        total = sum(i["price"] for i in SHOP_ITEMS)
-        text = f"🛒 *Нужно купить* ({len(SHOP_ITEMS)} позиций):\n\n"
-        rows = []
-        for item in SHOP_ITEMS:
-            text += f"• {item['name']} — {item['qty']} ({item['price']:.2f}€)\n"
-            rows.append([InlineKeyboardButton(f"✅ {item['name']}", callback_data=f"bought_{item['id']}")])
-        text += f"\n💰 *Итого: {total:.2f}€*"
-        await query.edit_message_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(rows))
-
-    elif cb == "shop_full":
-        text = "📋 *Полный список покупок:*\n\n"
-        for item in SHOP_ITEMS:
-            status = data["shop"].get(item["id"], "none")
-            icon = "✅" if status == "done" else "🟡" if status == "needed" else "⬜"
-            text += f"{icon} {item['name']} — {item['qty']} ({item['price']:.2f}€)\n"
-        await query.edit_message_text(text, parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 Всё нужно купить", callback_data="shop_all"),
-                 InlineKeyboardButton("🗑 Сброс", callback_data="shop_reset")],
-            ]))
+            await query.edit_message_text(text, parse_mode="Markdown", reply_markup=keyboard)
 
     elif cb == "shop_reset":
         data["shop"] = {}
         save_data(data)
-        await query.edit_message_text("✅ Список сброшен!", reply_markup=main_keyboard())
+        await query.edit_message_text("✅ Список сброшен!", reply_markup=shop_main_keyboard())
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
