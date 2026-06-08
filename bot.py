@@ -393,6 +393,12 @@ async def job_calendar_check(context):
         response = requests.get(CALENDAR_URL, timeout=10)
         cal = Calendar.from_ical(response.content)
         events = recurring_ical_events.of(cal).between(now + timedelta(minutes=14), now + timedelta(minutes=16))
+
+        # Дедупликация — не слать одно событие дважды
+        sent = context.bot_data.get("sent_notifications", {})
+        # Чистим старые записи (старше 2 часов)
+        sent = {k: v for k, v in sent.items() if (now - datetime.fromisoformat(v)).total_seconds() < 7200}
+
         for event in events:
             summary = str(event.get("SUMMARY", "Событие"))
             dtstart = event.get("DTSTART").dt
@@ -400,11 +406,18 @@ async def job_calendar_check(context):
                 continue
             if dtstart.tzinfo:
                 dtstart = dtstart.astimezone(LISBON)
+            # Ключ = название + время начала
+            key = f"{summary}_{dtstart.strftime('%Y-%m-%d_%H:%M')}"
+            if key in sent:
+                continue
+            sent[key] = now.isoformat()
             await context.bot.send_message(
                 chat_id=CHAT_ID,
                 text=f"⏰ Через 15 минут: *{summary}*\n🕐 {dtstart.strftime('%H:%M')}",
                 parse_mode="Markdown", reply_markup=main_keyboard()
             )
+
+        context.bot_data["sent_notifications"] = sent
     except Exception as e:
         print(f"Ошибка календаря: {e}")
 
