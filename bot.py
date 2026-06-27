@@ -11,7 +11,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotComm
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 LISBON = pytz.timezone("Europe/Lisbon")
-DATA_FILE = "data.json"
+DATA_FILE = "/app/data/data.json"
 BIRTH_DATE = date(1982, 4, 1)  # Денис, Овен
 
 def load_env():
@@ -210,6 +210,7 @@ MONTHS_RU = {
 }
 
 def load_data():
+    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
             return json.load(f)
