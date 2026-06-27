@@ -445,33 +445,53 @@ async def job_luna_morning(context):
         reply_markup=energy_keyboard("morning")
     )
 
+MOVEMENT_TIPS = [
+    "🏋️ 10 приседаний\n🙆 Потянись вверх — 30 сек\n🔄 Покрути плечами",
+    "🦵 10 выпадов (по 5 на каждую ногу)\n🙆 Наклоны в стороны — 30 сек\n😮‍💨 Глубокий вдох-выдох × 5",
+    "💪 10 отжиманий (или от стены)\n🐱 Потянись как кошка\n🔄 Покрути шеей медленно",
+    "🏋️ 15 подъёмов на носки\n🙆 Руки за голову, потянись\n🌀 Скрути корпус влево-вправо",
+    "🦵 20 шагов на месте с высоким коленом\n🙏 Сложи ладони, потяни руки вперёд\n😮‍💨 3 глубоких дыхания",
+    "💃 Встряхни руками и ногами — 30 сек\n🏋️ 10 приседаний\n🙆 Потянись к потолку",
+    "🔄 Покрути бёдрами — 10 кругов\n🦵 10 махов ногой\n🌿 Спокойно подыши носом",
+]
+
+async def job_water_and_move(context):
+    """Вода + движение — раз в час"""
+    if not CHAT_ID or get_weekday() == 6:
+        return
+    import random
+    tip = random.choice(MOVEMENT_TIPS)
+    text = (
+        "💧 *Стакан воды — прямо сейчас!*\n\n"
+        "И пока пьёшь — сделай:\n\n"
+        f"{tip}\n\n"
+        "_Тело говорит спасибо_ 🙌"
+    )
+    await context.bot.send_message(
+        chat_id=CHAT_ID,
+        text=text,
+        parse_mode="Markdown",
+        reply_markup=main_keyboard()
+    )
+
 async def job_evening_checkin(context):
-    """Вечерний чек-ин в 21:00"""
+    """21:00 — чтение + оценка дня"""
     if not CHAT_ID:
         return
     lunar_day = get_lunar_day()
     info = LUNAR_DAYS.get(lunar_day, LUNAR_DAYS[1])
+    text = (
+        "📚 *Время читать, Den!*\n\n"
+        "Отложи телефон, возьми книгу — хотя бы 30 минут.\n"
+        "Это лучшее что можно сделать перед сном 🌙\n\n"
+        f"{info['symbol']} {lunar_day}-й лунный день\n\n"
+        "*Как прошёл день? Оцени:*"
+    )
     await context.bot.send_message(
         chat_id=CHAT_ID,
-        text=f"🌙 *Как прошёл день, Den?*\n\n{info['symbol']} {lunar_day}-й лунный день\n\nОцени итог дня:",
+        text=text,
         parse_mode="Markdown",
         reply_markup=energy_keyboard("evening")
-    )
-
-async def job_water_reminder(context):
-    if not CHAT_ID or get_weekday() == 6:
-        return
-    data = load_data()
-    today = datetime.now(LISBON).strftime("%Y-%m-%d")
-    glasses = data.get("water", 0) if data.get("water_date") == today else 0
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("✅ Выпил 250мл", callback_data="water_add")],
-        [InlineKeyboardButton("💧 Трекер воды", callback_data="cmd_water")],
-    ])
-    await context.bot.send_message(
-        chat_id=CHAT_ID,
-        text=f"💧 Выпей 250мл воды!\n\nСегодня уже: {glasses * 0.25:.2f}л из 3л",
-        reply_markup=keyboard
     )
 
 async def job_meal_breakfast(context):
@@ -604,26 +624,14 @@ async def cmd_shop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, parse_mode="Markdown", reply_markup=shop_main_keyboard())
 
 async def cmd_water(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    data = load_data()
-    today = datetime.now(LISBON).strftime("%Y-%m-%d")
-    if data.get("water_date") != today:
-        data["water"] = 0
-        data["water_date"] = today
-        save_data(data)
-    glasses = data.get("water", 0)
-    liters = glasses * 0.25
-    goal = 12
-    bar = "💧" * glasses + "⬜" * (goal - glasses)
-    pct = int(liters / 3.0 * 100)
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("+ 250мл", callback_data="water_add"),
-         InlineKeyboardButton("- 250мл", callback_data="water_remove")],
-        [InlineKeyboardButton("Сбросить", callback_data="water_reset"),
-         InlineKeyboardButton("◀️ Меню", callback_data="cmd_menu")],
-    ])
+    import random
+    tip = random.choice(MOVEMENT_TIPS)
     await update.message.reply_text(
-        f"💧 *Вода сегодня*\n\n{bar}\n\nВыпито: *{liters:.2f}л* из 3л ({pct}%)\nСтаканов: {glasses} из {goal}",
-        parse_mode="Markdown", reply_markup=keyboard
+        "💧 *Выпей стакан воды прямо сейчас!*\n\n"
+        "И сделай пока пьёшь:\n\n"
+        f"{tip}\n\n"
+        "_Тело говорит спасибо_ 🙌",
+        parse_mode="Markdown", reply_markup=main_keyboard()
     )
 
 async def cmd_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -859,18 +867,14 @@ def main():
 
     jq = app.job_queue
 
-    # Google Calendar — каждую минуту
-    jq.run_repeating(job_calendar_check, interval=60, first=10)
-
     # Утро 6:00 — луна + оценка энергии
     jq.run_daily(job_luna_morning, time=dtime(hour=6, minute=0, tzinfo=LISBON))
 
-    # Вечер 21:00 — оценка дня
-    jq.run_daily(job_evening_checkin, time=dtime(hour=21, minute=0, tzinfo=LISBON))
+    # Вода + движение — раз в час с 7:00 до 20:00 (пн-сб)
+    jq.run_repeating(job_water_and_move, interval=3600, first=dtime(hour=7, minute=0, tzinfo=LISBON))
 
-    # Вода — 12 раз в день
-    for h, m in [(6,30),(7,30),(8,30),(9,30),(10,30),(11,30),(13,0),(14,30),(16,0),(17,30),(19,0),(20,30)]:
-        jq.run_daily(job_water_reminder, time=dtime(hour=h, minute=m, tzinfo=LISBON))
+    # 21:00 — чтение + оценка дня
+    jq.run_daily(job_evening_checkin, time=dtime(hour=21, minute=0, tzinfo=LISBON))
 
     # Еда — за 15 мин до приёма
     jq.run_daily(job_meal_breakfast,         time=dtime(hour=6,  minute=15, tzinfo=LISBON))
